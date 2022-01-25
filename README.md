@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# fellowRworkshop
-=======
-# fellowRworkshop
->>>>>>> d422fd537fd9ccb98b3f55d313db7c370e5a99a5
+## Sinai Emergency Medicine Fellow Stats Workshop in R
+
+Data and Code Samples for the workshop
+This page will be updated prior to each session with new code and data for use during the workshop
