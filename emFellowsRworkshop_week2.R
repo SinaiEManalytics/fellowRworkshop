@@ -65,6 +65,7 @@ head(data, n = 5)
 
 # table view - count data
 table(data$GENDER, useNA = "ifany")
+table(data$AGE)
 
 # view in a spreadsheet style table
 View(data) ## DO NOT USE THIS IF YOUR DATA IS LARGE AND WEIRD
@@ -91,8 +92,10 @@ median(data$AGE)
 quantile(data$AGE, 0.75)
 max(data$AGE)
 mean(data$AGE)
-sd(data$AGE)
+sd(data$AGE, na.rm= T)
+length(data$AGE)
 
+data$AGE > data$q1
 
 hist(data$AGE,breaks = 20)
 
@@ -102,7 +105,7 @@ hist(data$HOSPITAL_LENGTH_OF_STAY, breaks = 25)
 
 
 boxplot(data$HOSPITAL_TOTAL_COST)
-boxplot(HOSPITAL_TOTAL_COST ~ SEVERITY_OF_CONDITION, data=data)
+boxplot(HOSPITAL_TOTAL_COST ~ SEVERITY_OF_CONDITION, data=data, ylim = c(0, 300000))
 
 ## Q-Q Plot
 qqnorm(data$TIME_FROM_ARRIVAL_TO_DEPART)
@@ -130,8 +133,9 @@ data5 <- data %>%
 
 ## using dplyr to create new variables
 data4 <- data %>%
-  mutate(newAgeCat = cut(data$AGE, breaks = c(0, 64, 74, 84, 115), labels = c("<65", "65-74", "75-84", ">84")),
-         logCost = log(HOSPITAL_TOTAL_COST))
+  mutate(newAgeCat = cut(data$AGE, breaks = c(0, 64, 74, 84, 115), labels = c("<65", "65-74", "75-84", ">=85")),
+         logCost = log(HOSPITAL_TOTAL_COST),
+          severityFactor = as.factor(SEVERITY_OF_CONDITION))
 
 
 ## A Sneak peak at next week
@@ -147,6 +151,25 @@ plot(data4$HOSPITAL_LENGTH_OF_STAY, data4$logCost)
 abline(lm(logCost~HOSPITAL_LENGTH_OF_STAY, data = data4))  
 
 
+# Categorical Refactoring
+table(data$RACE)
+
+data5 <- data %>%
+  mutate(raceFactor = as.factor(case_when(str_detect(data$RACE, "Black") ~ "Black",
+                                          str_detect(data$RACE, "White") ~ "White", 
+                                          TRUE ~ "Other")))
+str(data5$raceFactor)
+
+
+# Dates
+library(lubridate)
+date <- as.Date("2021-02-06")
+data %>%
+  filter(year > 2012)
+data %>%
+  filter(date >= as.Date("2012-01-01"))
+
+difftime(as.Date(today()), as.Date("2014-09-09"))
 
 ##### Bivariate Analysis
 #### Data Manipulation ####
@@ -154,11 +177,12 @@ abline(lm(logCost~HOSPITAL_LENGTH_OF_STAY, data = data4))
 
 ##Contingency Table - 2 categorical variables
 library(gmodels)
+gmodels::
 table(data$GENDER, data$AGE > 75)
-CrossTable(data$GENDER, data$AGE > 75, chisq = T)
+gmodels::CrossTable(data$GENDER, data$AGE > 75, chisq = T)
 
 table(data$SEVERITY_OF_CONDITION, data$GENDER)
-
+CrossTable(data$SEVERITY_OF_CONDITION, data$GENDER, chisq = T)
 
 ## Correlation
 plot(data4$HOSPITAL_LENGTH_OF_STAY, data4$HOSPITAL_TOTAL_COST)
@@ -185,7 +209,8 @@ regLinear <- lm(HOSPITAL_TOTAL_COST~HOSPITAL_LENGTH_OF_STAY, data = data4)
 plot(regLinear)
 summary(regLinear)
 
-
+## Simple Logisitc REgression
 regLogistic <- glm(ICU-1 ~ AGE, data = data4, family = "binomial")
 summary(regLogistic)
 exp(coef(regLogistic))
+
