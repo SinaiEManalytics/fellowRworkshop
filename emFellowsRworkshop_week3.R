@@ -18,6 +18,9 @@
 library(tidyverse)
 data <- readRDS('dataFile.rds')
 
+table()
+gmodels::CrossTable(data$NEWGENDER, data$GENDER, chisq = T)
+gmodels::CrossTable(data$NEWGENDER, data$GENDER, fisher = T)
 
 ## Linear Regression
 
@@ -28,6 +31,8 @@ cor.test(data$HOSPITAL_LENGTH_OF_STAY, data$HOSPITAL_TOTAL_COST)
 ## perform linear regression
 linearModel <- lm(HOSPITAL_TOTAL_COST ~ HOSPITAL_LENGTH_OF_STAY, data = data)
 summary(linearModel)
+
+saveRDS(linearModel, file = "linearModel.rds")
                          
 ## Extract model summary parts
 modelSummary <- summary(linearModel)
@@ -64,10 +69,11 @@ plot (density (residuals (linearModel)))
 ## We can use this model to predict on unseen data
 summary(data$HOSPITAL_LENGTH_OF_STAY)
 set.seed(42)
-newData<- data.frame(LOS = floor(runif(min = 0, max = 100, n = 500)), 
+newData<- data.frame(LOS = floor(rnorm(mean = 50, sd = 10, n = 500)), 
                      HOSPITAL_LENGTH_OF_STAY = floor(runif(min = 0, max = 100, n = 500))) #try rnorm for fun
 summary(newData)
 hist(newData$LOS)
+newData$newRandom <- floor(runif(min = 0, max = 100, n = 500))
 
 pp <- predict(linearModel, int = "p", newdata = newData)
 pp
@@ -95,7 +101,7 @@ summary(data$AGE)
 data$ageCat <- cut(data$AGE, breaks = c(0,74,84,110), labels = c("65-74", "75-84", "85+"))
 
 
-regLogistic <- glm(ICUbinary ~ AGE, data = data, family = "binomial")
+regLogistic <- glm(ICUbinary ~ AGE , data = data, family = "binomial") # negative binomial, gaussian, poison
 regLogisticCategory <- glm(ICUbinary ~ ageCat, data = data, family = "binomial")
 summary(regLogistic)
 exp(coef(regLogistic))
@@ -105,3 +111,19 @@ summary(regLogisticCategory)
 exp(coef(regLogisticCategory))
 exp(confint(regLogisticCategory))
 
+names(data)
+
+summary(data$DEATH)
+data$deadBinary <- ifelse(data$DEATH==1, 1, 0)
+
+
+
+table(data$ESI)
+str(data$ESI)
+data$ESIFactor <- relevel(as.factor(data$ESI), ref = "3")
+str(data$ESIFactor)
+regLogistDeath <- glm(deadBinary ~ AGE + GENDER + ESIFactor, data = data, family = "binomial")
+summary(regLogistDeath)
+exp(coef(regLogistDeath))
+
+options(scipen=999)
